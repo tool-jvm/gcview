@@ -258,7 +258,11 @@ func callgcview(pid string	) string  {
 			dat = dat / 1000
 			outstr = outstr + "<td>" + strconv.FormatFloat(dat,'f',2,64) + "MB</td>"
 		}else{
-			outstr = outstr + "<td>" + arrValue[idx] + "KB</td>"
+			if strings.Contains(title,"数量") {
+				outstr = outstr + "<td>" + arrValue[idx] + "次</td>"
+			}else{
+				outstr = outstr + "<td>" + arrValue[idx] + "KB</td>"
+			}
 		}
 
 		outstr = outstr + "<td>" + strconv.FormatFloat(rat,'f',2,64) + "%</td>"
