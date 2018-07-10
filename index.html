@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <!-- 新 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+    <!--        <script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>-->
+    <style type="text/css">
+        /*表格样式*/
+        table {width:90%;background:#ccc; margin: 10px auto;border-collapse:collapse;}
+        /*border-collapse:collapse合并内外边距(去除表格单元格默认的2个像素内外边距*/
+        th, td {height:25px;line-height:25px;text-align:center;border:1px solid #ccc;}
+        th {background:#eee;font-weight:normal;}
+        tr {background:#fff;}
+        tr:hover {background:#cc0;}
+        td a {color:#06f;text-decoration:none;}
+        td a:hover {color:#06f;text-decoration:underline;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div>内容：</div>
+    <div class="list-group" id="divShow">
+        <!--<div class="list-group-item list-group-item-success">1111</div>
+        <div class="list-group-item list-group-item-info">1111</div>
+        <div class="list-group-item list-group-item-warning">1111</div>
+        <div class="list-group-item list-group-item-danger">1111</div>-->
+    </div>
+    <div class="list-group" id="divUsers">
+        在线：<br />
+        <div class="btn btn-default" onclick="changeparam('ecg-api')">ecg-api</div>
+        <div class="btn btn-default" onclick="changeparam('ecg-user')">ecg-user</div>
+        <div class="btn btn-default" onclick="changeparam('ecg-spa')">ecg-spa</div>
+        <div class="btn btn-default" onclick="changeparam('ecg-token')">ecg-token</div>
+        <div class="btn btn-default" onclick="changeparam('ecg-intserv')">ecg-intserv</div>
+        <div class="btn btn-default" onclick="changeparam('ecg-anasvr')">ecg-anasvr</div>
+        <div class="btn btn-default" onclick="changeparam('ecg-analyze')">ecg-analyze</div>
+        <div class="btn btn-default" onclick="changeparam('sli-spa')">sli-spa</div>
+    </div>
+    <div>
+        应用：<input class="form-control" id="txtUserName" value="api" type="text" maxlength="20" style="width: 30%; margin-bottom: 15px" />
+        命令：<textarea class="form-control" id="txtContent" autofocus rows="6" placeholder="想聊的内容" maxlength="200" required style="width: 60%; "></textarea>
+        <button class="btn btn-default" id="btnSend" style="margin-top:15px">发 送</button>
+    </div>
+</div>
+</body>
+</html>
+
+<script>
+
+    var tool = function () {
+
+        var paperLoopNum = 0;
+        var paperTempleArr = [
+            '<div class="list-group-item list-group-item-success">{0}</div>',
+            '<div class="list-group-item list-group-item-info">{0}</div>',
+            '<div class="list-group-item list-group-item-warning">{0}</div>',
+            '<div class="list-group-item list-group-item-danger">{0}</div>'
+        ];
+
+        return {
+
+            paperDiv: function (val) {
+
+                // var hl = paperTempleArr[paperLoopNum];
+                // paperLoopNum++;
+                // if (paperLoopNum >= paperTempleArr.length) { paperLoopNum = 0; }
+
+                var hl = paperTempleArr[0];
+                return this.formart(hl, [val])
+            },
+            formart: function (str, arrVal) {
+
+                for (var i = 0; i < arrVal.length; i++) {
+                    str = str.replace("{" + i + "}", arrVal[i]);
+                }
+                return str;
+            }
+        }
+    }
+
+    function showMsg(id, hl, isAppend) {
+
+        if (!isAppend) { $("#" + id).html(hl); } else {
+            $("#" + id).append(hl);
+        }
+    }
+
+    msg = "api"
+    $(function () {
+
+        //初始化工具方法
+        var tl = new tool();
+
+        var wsUrl = "ws://192.168.9.136:8880/webSocket";
+        ws = new WebSocket(wsUrl);
+
+        try {
+
+            ws.onopen = function () {
+
+                //showMsg("divShow", tl.paperDiv("连接服务器-成功"));
+            }
+
+            ws.onclose = function () {
+                if (ws) {
+                    ws.close();
+                    ws = null;
+                }
+                showMsg("divShow", tl.paperDiv("连接服务器-关闭"), false);
+            }
+
+            ws.onmessage = function (result) {
+
+                //console.log(result.data);
+                var data = JSON.parse(result.data);
+                $(data.UserMsgs).each(function (i, item) {
+                    // showMsg("divShow", tl.paperDiv("【" + item.UserName + "】：" + item.Msg), false);
+                    showMsg("divShow", tl.paperDiv("【当前应用】：" + item.Msg), false);
+                });
+
+                var userDataShow = [];
+                $(data.UserDatas).each(function (i, item) {
+
+                    userDataShow.push('<div class="btn btn-default">' + item.UserName + '</div>');
+
+                });
+                //showMsg("divUsers", userDataShow.join(''), false);
+            }
+
+            ws.onerror = function () {
+                if (ws) {
+                    ws.close();
+                    ws = null;
+                }
+                showMsg("divShow", tl.paperDiv("连接服务器-关闭"), false);
+            }
+
+        } catch (e) {
+
+            alert(e.message);
+        }
+        $("#btnSend").on("click", function () {
+
+            var tContentObj = $("#txtContent");
+            var tContent = $.trim( tContentObj.val()).replace("/[\n]/g", "");
+            // var tUserName = $.trim( $("#txtUserName").val()); tUserName = tUserName.length <= 0 ? "匿名" : tUserName;
+            if (tContent.length <= 0 || $.trim(tContent).length <= 0) { alert("请输入发送内容!"); return; }
+            if (ws == null) { alert("连接失败，请F5刷新页面!"); return; }
+
+            window.msg = tContent
+            // var request = tl.formart('{"UserName": "{0}", "DataType": "{1}", "Msg": "{2}" }',
+            //         [tUserName, "send", tContent]);
+            // ws.send(request);
+            tContentObj.val("");
+            tContentObj.val($.trim(tContentObj.val()).replace("/[\n]/g", ""));
+        });
+        $("#txtContent").on("keydown", function (event) {
+
+            if (event.keyCode == 13) {
+
+                $("#btnSend").trigger("click");
+            }
+        });
+
+
+        function api() {
+            var tUserName = $.trim( $("#txtUserName").val()); tUserName = tUserName.length <= 0 ? "匿名" : tUserName;
+            var request = tl.formart('{"UserName": "{0}", "DataType": "{1}", "Msg": "{2}" }',
+                    [tUserName, "send", window.msg]);
+            ws.send(request);
+        }
+
+        window.setInterval(api,500);
+
+    })
+
+    function changeparam(param) {
+        window.msg = param
+    }
+
+</script>
