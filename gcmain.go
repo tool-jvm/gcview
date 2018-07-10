@@ -115,7 +115,7 @@ func h_webSocket(ws *websocket.Conn) {
 			msg := callshellarg(userMsg.Msg)
 			pid :=getMainPid(msg)
 			msg = callgcview(pid)
-			userMsg.Msg = userMsg.Msg+msg
+			userMsg.Msg = userMsg.Msg+" pid【"+pid+"】"+msg
 			datas.UserMsgs = append(datas.UserMsgs, userMsg)
 		}
 	}
@@ -172,7 +172,10 @@ func callshellarg(arg string) string {
 }
 
 func getMainPid(info string) (string) {
-	info = Substr(info,10,20)
+	arrt :=strings.Split(info," ")
+	lens := len(arrt[0])
+	info = Substr(info,lens,20)
+	info = strings.TrimLeft(info," ")
 	arr :=strings.Split(info," ")
 	return arr[0]
 }
